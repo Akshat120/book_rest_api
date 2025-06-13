@@ -1,8 +1,10 @@
 package main
 
 import (
-	"book_rest_api/handler"
-	"book_rest_api/repository"
+	"book_rest_api/internal/config"
+	"book_rest_api/internal/handler"
+	"book_rest_api/internal/middleware"
+	"book_rest_api/internal/repository"
 	"context"
 	"database/sql"
 	"fmt"
@@ -18,7 +20,12 @@ import (
 
 func main() {
 
-	db, err := sql.Open(config.Database.Type, config.Database.ConnectionString)
+	appConfig, err := config.InitConfig()
+	if err != nil {
+		log.Fatalf("Error loading configuration: %v", err)
+	}
+
+	db, err := sql.Open(appConfig.Database.Type, appConfig.Database.ConnectionString)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,6 +36,8 @@ func main() {
 
 	r := mux.NewRouter()
 
+	r.Use(middleware.RateLimitMiddleware)
+
 	r.HandleFunc("/health", handler.HealthHandler)
 
 	booksRoute := r.PathPrefix("/books").Subrouter()
@@ -38,21 +47,21 @@ func main() {
 
 	// protected routes
 	protectedRoutes := r.PathPrefix("/books").Subrouter()
-	protectedRoutes.Use(BasicAuthMiddleware)
+	protectedRoutes.Use(middleware.BasicAuthMiddleware)
 	protectedRoutes.HandleFunc("", bookHandler.AddBook).Methods("POST")
 	protectedRoutes.HandleFunc("/{id:[0-9]+}", bookHandler.UpdateBook).Methods("PUT")
 	protectedRoutes.HandleFunc("/{id:[0-9]+}", bookHandler.DeleteBook).Methods("DELETE")
 
 	srv := &http.Server{
 		Handler:      r,
-		Addr:         config.Server.Addr,
-		WriteTimeout: time.Duration(config.Server.WriteTimeout) * time.Second,
-		ReadTimeout:  time.Duration(config.Server.ReadTimeout) * time.Second,
-		IdleTimeout:  time.Duration(config.Server.IdleTimeout) * time.Second,
+		Addr:         appConfig.Server.Addr,
+		WriteTimeout: time.Duration(appConfig.Server.WriteTimeout) * time.Second,
+		ReadTimeout:  time.Duration(appConfig.Server.ReadTimeout) * time.Second,
+		IdleTimeout:  time.Duration(appConfig.Server.IdleTimeout) * time.Second,
 	}
 
 	go func() {
-		fmt.Printf("App: %s running on port %d\n", config.AppName, config.Server.Port)
+		fmt.Printf("App: %s running on port %d\n", appConfig.AppName, appConfig.Server.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal("ListenAndServer(): %s", err)
 		}

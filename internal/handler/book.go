@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"book_rest_api/models"
-	"book_rest_api/repository"
+	"book_rest_api/internal/models"
+	"book_rest_api/internal/repository"
 	"database/sql"
 	"encoding/json"
 	"fmt"

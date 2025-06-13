@@ -5,7 +5,7 @@
 3. `dbmate create` - to create the database with the step-2 if not created before.
 4. `dbmate new <migration_file_name>` - it will create a new migration file in ./db/migration/ path
 5. `dbmate up` - to apply migration from step-4.
-6. `mysql -u root -p my_database < ./db/seeds/seed.sql` - this will seed the database.
+6. `mysql -u root -p my_database < ./db/seeds/books.sql` - this will seed the database.
 
 # FORMAT FOR config.json
 create a config.json file in the root directly and populate it with required params

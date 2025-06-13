@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"book_rest_api/models"
+	"book_rest_api/internal/models"
 	"database/sql"
 )
 
