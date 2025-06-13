@@ -77,7 +77,13 @@ func (br *bookRepo) Create(book *models.Book) error {
 }
 
 func (br *bookRepo) Update(book *models.Book) error {
-	_, err := br.db.Exec(`
+
+	_, err := br.GetBookByID(book.ID)
+	if err != nil {
+		return err
+	}
+
+	_, err = br.db.Exec(`
 	UPDATE books
 	SET title = ?, author = ?
 	WHERE id = ?
@@ -90,7 +96,7 @@ func (br *bookRepo) Update(book *models.Book) error {
 }
 
 func (br *bookRepo) Delete(id int) error {
-	_, err := br.db.Exec(`
+	result, err := br.db.Exec(`
 	DELETE
 	FROM books
 	where id = ?
@@ -98,5 +104,14 @@ func (br *bookRepo) Delete(id int) error {
 	if err != nil {
 		return err
 	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
 	return nil
 }

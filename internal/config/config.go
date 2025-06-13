@@ -5,37 +5,52 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+
+	"github.com/mcuadros/go-defaults"
 )
 
+// DatabaseConfig holds the configuration for the database connection
 type DatabaseConfig struct {
-	Type             string `json:"type"`
-	Host             string `json:"host"`
-	Port             int    `json:"port"`
-	User             string `json:"user"`
-	Password         string `json:"password"`
+	Type             string `json:"type" default:"mysql"`        // e.g., "mysql", "postgres", etc.
+	Host             string `json:"host" default:"localhost"`    // Default MySQL host
+	Port             int    `json:"port" default:"3306"`         // Default MySQL port
+	User             string `json:"user" default:"root"`         // Default MySQL user
+	Password         string `json:"password" default:"password"` // Default MySQL password
+	DbName           string `json:"db_name" default:"my_books"`  // Default database name
 	ConnectionString string `json:"connection_string"`
-	DbName           string `json:"db_name"`
 }
 
+// BasicAuthConfig holds the configuration for basic authentication
 type BasicAuthConfig struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `json:"username" default:"admin"`    // Default username for basic auth
+	Password string `json:"password" default:"password"` // Default password for basic auth
 }
 
+// ServerConfig holds the configuration for the HTTP server
 type ServerConfig struct {
-	Port         int    `json:"port"`
-	Addr         string `json:"address"`
-	WriteTimeout int    `json:"write_timeout"`
-	ReadTimeout  int    `json:"read_timeout"`
-	IdleTimeout  int    `json:"idle_timeout"`
+	Host         string `json:"host" default:"localhost"`   // Default host for the server
+	Port         int    `json:"port" default:"8080"`        // Default port for the server
+	Addr         string `json:"address"`                    // Address to bind the server to
+	WriteTimeout int    `json:"write_timeout" default:"20"` // Write timeout in seconds
+	ReadTimeout  int    `json:"read_timeout" default:"20"`  // Read timeout in seconds
+	IdleTimeout  int    `json:"idle_timeout" default:"20"`  // Idle timeout in seconds
 }
 
+// RateLimiter configuration
+type RateLimiterConfig struct {
+	Enabled bool    `json:"enabled" default:"true"` // Enable or disable rate limiting
+	Rate    float64 `json:"rate" default:"100"`     // requests per second
+	Burst   int     `json:"burst" default:"20"`     // maximum burst size
+}
+
+// Config holds the application configuration
 type Config struct {
-	AppName   string          `json:"app_name"`
-	Debug     bool            `json:"debug"`
-	Server    ServerConfig    `json:"server"`
-	Database  DatabaseConfig  `json:"database"`
-	BasicAuth BasicAuthConfig `json:"basic_auth"`
+	AppName     string            `json:"app_name" default:"BooksApi"`
+	Debug       bool              `json:"debug" default:"false"` // Enable or disable debug mode
+	Server      ServerConfig      `json:"server"`
+	Database    DatabaseConfig    `json:"database"`
+	BasicAuth   BasicAuthConfig   `json:"basic_auth"`
+	RateLimiter RateLimiterConfig `json:"rate_limiter"`
 }
 
 var appConfig *Config
@@ -78,11 +93,13 @@ func loadConfig(filename string) (*Config, error) {
 	if err != nil {
 		return config, err
 	}
+
 	setDefaults(config)
 	return config, nil
 }
 
 func setDefaults(config *Config) {
+	defaults.SetDefaults(config)
 	config.Server.Addr = getAddress(config.Server.Port)
 	config.Database.ConnectionString = getDatabaseConnectString(
 		config.Database.User,

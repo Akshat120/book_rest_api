@@ -136,7 +136,12 @@ func (bh *BookHandler) UpdateBook(w http.ResponseWriter, r *http.Request) {
 
 	err = bh.Repo.Update(&updatedBook)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("error: %v", err), http.StatusInternalServerError)
+		if err == sql.ErrNoRows {
+			http.Error(w, "Book not found", http.StatusNotFound)
+		} else {
+			http.Error(w, fmt.Sprintf("error: %v", err), http.StatusInternalServerError)
+		}
+		return
 	}
 
 	w.Header().Add("Content-Type", "application/json")
@@ -161,7 +166,12 @@ func (bh *BookHandler) DeleteBook(w http.ResponseWriter, r *http.Request) {
 
 	err = bh.Repo.Delete(id)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("error: %v", err), http.StatusInternalServerError)
+		if err == sql.ErrNoRows {
+			http.Error(w, "Book not found", http.StatusNotFound)
+		} else {
+			http.Error(w, fmt.Sprintf("error: %v", err), http.StatusInternalServerError)
+		}
+		return
 	}
 
 	w.Header().Add("Content-Type", "application/json")

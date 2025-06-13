@@ -31,6 +31,8 @@ func main() {
 	}
 	defer db.Close()
 
+	middleware.InitRateLimiter(appConfig.RateLimiter.Rate, appConfig.RateLimiter.Burst)
+
 	bookRepo := repository.NewBookRepository(db)
 	bookHandler := handler.NewBookHandler(bookRepo)
 
@@ -47,7 +49,7 @@ func main() {
 
 	// protected routes
 	protectedRoutes := r.PathPrefix("/books").Subrouter()
-	protectedRoutes.Use(middleware.BasicAuthMiddleware)
+	protectedRoutes.Use(middleware.BasicAuthMiddleware(appConfig))
 	protectedRoutes.HandleFunc("", bookHandler.AddBook).Methods("POST")
 	protectedRoutes.HandleFunc("/{id:[0-9]+}", bookHandler.UpdateBook).Methods("PUT")
 	protectedRoutes.HandleFunc("/{id:[0-9]+}", bookHandler.DeleteBook).Methods("DELETE")
@@ -61,7 +63,7 @@ func main() {
 	}
 
 	go func() {
-		fmt.Printf("App: %s running on port %d\n", appConfig.AppName, appConfig.Server.Port)
+		fmt.Printf("App: %v running at http://%v:%v\n", appConfig.AppName, appConfig.Server.Host, appConfig.Server.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal("ListenAndServer(): %s", err)
 		}
